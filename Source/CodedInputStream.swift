@@ -21,9 +21,9 @@ let DEFAULT_RECURSION_LIMIT:Int = 64
 let DEFAULT_SIZE_LIMIT:Int = 64 << 20  // 64MB
 let BUFFER_SIZE:Int = 4096
 
-public class CodedInputStream {
+final public class CodedInputStream {
     public var buffer:[UInt8]
-    fileprivate var input:InputStream?
+    internal var input:InputStream?
     fileprivate var bufferSize:Int = 0
     fileprivate var bufferSizeAfterLimit:Int = 0
     fileprivate var bufferPos:Int = 0
@@ -305,11 +305,10 @@ public class CodedInputStream {
         
     }
     private func skipMessage() throws {
-        while (true) {
+        while true {
             let tag:Int32 = try readTag()
             let fieldSkip = try skipField(tag: tag)
-            if tag == 0 || !fieldSkip
-            {
+            if tag == 0 || !fieldSkip {
                 break
             }
         }
@@ -463,7 +462,6 @@ public class CodedInputStream {
     public func readString() throws -> String {
         let size = Int(try readRawVarint32())
         if size <= (bufferSize - bufferPos) && size > 0 {
-//            let pointer = UnsafeMutablePointerInt8From(data: buffer)
             let result = String(bytesNoCopy: &buffer + bufferPos, length: size, encoding: String.Encoding.utf8, freeWhenDone: false)
             bufferPos += size
             return result!
@@ -476,7 +474,6 @@ public class CodedInputStream {
     public func readData() throws -> Data {
         let size = Int(try readRawVarint32())
         if size < bufferSize - bufferPos && size > 0 {
-//            let pointer = UnsafeMutablePointerInt8From(data: buffer)
             let unsafeRaw = UnsafeRawPointer(&buffer+bufferPos)
             let data = Data(bytes: unsafeRaw, count: size)
             bufferPos += size
@@ -582,6 +579,7 @@ public class CodedInputStream {
         try checkLastTagWas(value: WireFormat.endGroup.makeTag(fieldNumber: Int32(fieldNumber)))
         recursionDepth-=1
     }
+    
     public func readUnknownGroup(fieldNumber:Int32, builder:UnknownFieldSet.Builder) throws {
         guard recursionDepth < recursionLimit else {
             throw ProtocolBuffersError.invalidProtocolBuffer("Recursion Limit Exceeded")
